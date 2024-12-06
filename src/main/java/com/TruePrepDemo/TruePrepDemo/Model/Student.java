@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Setter
 @Getter
-@Document("student") // Collection name in MongoDB
+@Document("student")
 public class Student {
 
     @Id
