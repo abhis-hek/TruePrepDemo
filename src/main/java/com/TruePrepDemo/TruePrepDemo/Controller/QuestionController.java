@@ -12,7 +12,8 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/questions") // Base endpoint for question-related operations
+@RequestMapping("/api/questions")
+@CrossOrigin(origins = "http://localhost:3000")// Base endpoint for question-related operations
 public class QuestionController {
 
     @Autowired

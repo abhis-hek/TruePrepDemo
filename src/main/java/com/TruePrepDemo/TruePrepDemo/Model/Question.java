@@ -21,6 +21,4 @@ public class Question {
     private String optionD;
     private String correctAnswer;
 
-    // Getters and Setters
-
 }
