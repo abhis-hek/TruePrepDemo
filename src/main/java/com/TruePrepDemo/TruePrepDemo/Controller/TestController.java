@@ -1,9 +1,12 @@
 package com.TruePrepDemo.TruePrepDemo.Controller;
 
+import com.TruePrepDemo.TruePrepDemo.Model.Student;
 import com.TruePrepDemo.TruePrepDemo.Model.Question;
 import com.TruePrepDemo.TruePrepDemo.Model.Test;
+import com.TruePrepDemo.TruePrepDemo.Repo.StudentRepository;
 import com.TruePrepDemo.TruePrepDemo.Repo.QuestionRepository;
 import com.TruePrepDemo.TruePrepDemo.Repo.TestRepository;
+import com.TruePrepDemo.TruePrepDemo.Service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,19 +28,34 @@ public class TestController {
     @Autowired
     private TestRepository testRepository;
 
-    // Create a test with random 10 questions from a given section
+    @Autowired
+    private StudentRepository studentRepository;
+
+    @Autowired
+    private EmailService emailService;
+
     @PostMapping("/create")
-    public ResponseEntity<Test> createTest(@RequestParam String section, @RequestParam String teacherName) {
+    public ResponseEntity<Test> createTest(
+            @RequestParam String section,
+            @RequestParam String teacherName,
+            @RequestParam int questionLimit,
+            @RequestParam int duration,
+            @RequestParam String testDate,
+            @RequestParam List<String> topics) {
+
         // Fetch all questions from the specified section
         List<Question> questions = questionRepository.findBySection(section);
 
-        if (questions.size() < 10) {
-            return ResponseEntity.badRequest().body(null); // Ensure at least 10 questions are available
+        if (questions.size() < questionLimit) {
+            return ResponseEntity.badRequest()
+                    .body(null); // Ensure enough questions are available
         }
 
-        // Shuffle and pick the first 10 questions
+        // Shuffle and pick the required number of questions
         Collections.shuffle(questions);
-        List<Question> selectedQuestions = questions.stream().limit(10).collect(Collectors.toList());
+        List<Question> selectedQuestions = questions.stream()
+                .limit(questionLimit)
+                .collect(Collectors.toList());
 
         // Create and save the test
         Test test = new Test();
@@ -45,21 +63,37 @@ public class TestController {
         test.setTeacherName(teacherName);
         test.setSection(section);
         test.setCreatedDate(LocalDateTime.now());
+        test.setDuration(duration);
+        test.setTestDate(LocalDateTime.parse(testDate)); // Assuming ISO-8601 format
+        test.setTopics(topics);
         test.setQuestions(selectedQuestions);
 
         Test savedTest = testRepository.save(test);
 
+        // Fetch all students
+        List<Student> students = studentRepository.findAll();
+
+        // Prepare test details message
+        String testDetails = "A new test has been assigned. \nDetails:\n" +
+                "Section: " + section + "\n" +
+                "Teacher Name: " + teacherName + "\n" +
+                "Number of Questions: " + questionLimit + "\n" +
+                "Duration: " + duration + " minutes\n" +
+                "Test Date: " + testDate + "\n" +
+                "Topics: " + String.join(", ", topics);
+
+        // Send email notifications to all students
+        emailService.sendTestNotification(students, testDetails);
+
         return ResponseEntity.ok(savedTest);
     }
 
-    // Get all tests
     @GetMapping
     public ResponseEntity<List<Test>> getAllTests() {
         List<Test> tests = testRepository.findAll();
         return ResponseEntity.ok(tests);
     }
 
-    // Get a specific test by ID
     @GetMapping("/{id}")
     public ResponseEntity<Test> getTestById(@PathVariable String id) {
         return testRepository.findById(id)

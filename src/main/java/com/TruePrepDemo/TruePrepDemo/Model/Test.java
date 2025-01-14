@@ -15,7 +15,6 @@ import java.util.List;
 @Document(collection = "tests")
 public class Test {
 
-    // Getters and Setters
     @Id
     private String id;
 
@@ -28,4 +27,7 @@ public class Test {
     @Field(targetType = FieldType.ARRAY)
     private List<Question> questions; // Embedded list of questions
 
+    private int duration; // Duration in minutes
+    private LocalDateTime testDate; // Date and time of the test
+    private List<String> topics; // List of topic names
 }
