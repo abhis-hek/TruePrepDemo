@@ -3,10 +3,12 @@ package com.TruePrepDemo.TruePrepDemo.Controller;
 import com.TruePrepDemo.TruePrepDemo.Model.Student;
 import com.TruePrepDemo.TruePrepDemo.Service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/students")
@@ -17,12 +19,33 @@ public class StudentController {
     private StudentService studentService;
 
     // Signup functionality remains the same
+    // Signup functionality with email existence check
     @PostMapping("/signup")
-    public ResponseEntity<Student> signup(@RequestBody Student student) {
+    public ResponseEntity<?> signup(@RequestBody Student student) {
+        // Check if the email already exists
+        if (studentService.findByEmail(student.getEmail()).isPresent()) {
+            return ResponseEntity.status(409) // Conflict status code
+                    .body("Email already exists. Please use a different email.");
+        }
+
+        // Proceed with saving the student
         Student savedStudent = studentService.saveStudent(student);
         return ResponseEntity.ok(savedStudent);
     }
 
+
+    // Login functionality for students
+    @PostMapping("/login")
+    public ResponseEntity<Student> login(@RequestBody Student loginRequest) {
+        Optional<Student> studentOptional = studentService.login(loginRequest.getEmail(), loginRequest.getPassword());
+
+        if (studentOptional.isPresent()) {
+            return ResponseEntity.ok(studentOptional.get()); // Successful login
+        }
+        return ResponseEntity.status(401).body(null); // Unauthorized if credentials are invalid
+    }
+
+    // Fetch student by email
     @GetMapping("/email/{email}")
     public ResponseEntity<Student> findByEmail(@PathVariable String email) {
         return studentService.findByEmail(email)

@@ -59,6 +59,19 @@ public class TeacherService {
         return teacher;
     }
 
+    public Teacher authenticateTeacher(String email, String password) {
+        Teacher teacher = teacherRepository.findByEmail(email);
+        if (teacher != null && teacher.getPassword().equals(password)) {
+            // Ensure the teacher is approved
+            if (teacher.isApproved()) {
+                return teacher; // Return teacher object on successful login
+            } else {
+                throw new RuntimeException("Teacher account is not approved.");
+            }
+        }
+        return null; // Return null if authentication fails
+    }
+
     private void sendPasswordEmail(Teacher teacher, String password) {
         String subject = "Your TruePrep Account Details";
         String message = String.format(

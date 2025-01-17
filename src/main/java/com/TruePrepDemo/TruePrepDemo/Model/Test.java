@@ -30,4 +30,5 @@ public class Test {
     private int duration; // Duration in minutes
     private LocalDateTime testDate; // Date and time of the test
     private List<String> topics; // List of topic names
+    private List<String> studentIds; // List of student IDs assigned to this test
 }

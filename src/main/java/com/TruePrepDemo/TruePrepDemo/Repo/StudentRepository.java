@@ -2,9 +2,8 @@ package com.TruePrepDemo.TruePrepDemo.Repo;
 
 import com.TruePrepDemo.TruePrepDemo.Model.Student;
 import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.stereotype.Repository;
+import java.util.Optional;
 
-@Repository
 public interface StudentRepository extends MongoRepository<Student, String> {
-    Student findByEmail(String email);
+    Optional<Student> findByEmail(String email); // Find student by email
 }

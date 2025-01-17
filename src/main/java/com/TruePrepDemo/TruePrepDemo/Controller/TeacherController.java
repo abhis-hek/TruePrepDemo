@@ -30,6 +30,15 @@ public class TeacherController {
     public ResponseEntity<List<Teacher>> getAllTeachers() {
         return ResponseEntity.ok(teacherService.getAllTeachers());
     }
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Teacher teacher) {
+        Teacher authenticatedTeacher = teacherService .authenticateTeacher(teacher.getEmail(), teacher.getPassword());
+        if (authenticatedTeacher != null) {
+            return ResponseEntity.ok(authenticatedTeacher); // Return teacher details on successful login
+        } else {
+            return ResponseEntity.badRequest().body("Invalid email or password.");
+        }
+    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTeacher(@PathVariable String id) {

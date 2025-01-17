@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/questions")
-@CrossOrigin(origins = "http://localhost:3000")// Base endpoint for question-related operations
+@CrossOrigin(origins = "http://localhost:3000")
 public class QuestionController {
 
     @Autowired
@@ -53,7 +53,7 @@ public class QuestionController {
     public ResponseEntity<List<Question>> getQuestionsBySection(@PathVariable String section) {
         List<Question> questions = questionRepository.findBySection(section);
         if (questions.isEmpty()) {
-            return ResponseEntity.noContent().build(); // Returns 204 if no questions are found
+            return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(questions);
     }
@@ -64,7 +64,6 @@ public class QuestionController {
         Optional<Question> existingQuestion = questionRepository.findById(id);
         if (existingQuestion.isPresent()) {
             Question question = existingQuestion.get();
-            // Updating fields
             question.setSection(updatedQuestion.getSection());
             question.setQuestionText(updatedQuestion.getQuestionText());
             question.setOptionA(updatedQuestion.getOptionA());

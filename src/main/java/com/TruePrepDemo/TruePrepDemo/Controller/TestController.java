@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -35,20 +36,43 @@ public class TestController {
     private EmailService emailService;
 
     @PostMapping("/create")
-    public ResponseEntity<Test> createTest(
+    public ResponseEntity<?> createTest(
             @RequestParam String section,
             @RequestParam String teacherName,
             @RequestParam int questionLimit,
             @RequestParam int duration,
             @RequestParam String testDate,
-            @RequestParam List<String> topics) {
+            @RequestParam(required = false) List<String> topics) {
+
+        // Default topics to an empty list if null
+        if (topics == null) {
+            topics = Collections.emptyList();
+        }
+
+        // Validate inputs
+        if (questionLimit <= 0 || duration <= 0) {
+            return ResponseEntity.badRequest()
+                    .body("Question limit and duration must be greater than 0.");
+        }
+
+        try {
+            LocalDateTime.parse(testDate); // Validate date format
+        } catch (DateTimeParseException e) {
+            return ResponseEntity.badRequest()
+                    .body("Invalid testDate format. Use ISO-8601 format (e.g., 2025-01-14T10:15:30).");
+        }
 
         // Fetch all questions from the specified section
         List<Question> questions = questionRepository.findBySection(section);
 
+        if (questions.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body("No questions available for the specified section.");
+        }
+
         if (questions.size() < questionLimit) {
             return ResponseEntity.badRequest()
-                    .body(null); // Ensure enough questions are available
+                    .body("Not enough questions available for the specified question limit.");
         }
 
         // Shuffle and pick the required number of questions
@@ -64,14 +88,17 @@ public class TestController {
         test.setSection(section);
         test.setCreatedDate(LocalDateTime.now());
         test.setDuration(duration);
-        test.setTestDate(LocalDateTime.parse(testDate)); // Assuming ISO-8601 format
+        test.setTestDate(LocalDateTime.parse(testDate));
         test.setTopics(topics);
         test.setQuestions(selectedQuestions);
 
-        Test savedTest = testRepository.save(test);
-
-        // Fetch all students
+        // Fetch all students and associate them with the test
         List<Student> students = studentRepository.findAll();
+        test.setStudentIds(students.stream()
+                .map(Student::getId)
+                .collect(Collectors.toList()));
+
+        Test savedTest = testRepository.save(test);
 
         // Prepare test details message
         String testDetails = "A new test has been assigned. \nDetails:\n" +
@@ -87,12 +114,27 @@ public class TestController {
 
         return ResponseEntity.ok(savedTest);
     }
+    @GetMapping("/{id}/questions")
+    public ResponseEntity<List<Question>> getQuestionsByTestId(@PathVariable String id) {
+        return testRepository.findById(id)
+                .map(test -> ResponseEntity.ok(test.getQuestions()))
+                .orElse(ResponseEntity.status(404).body(Collections.emptyList()));
+    }
+
+    @GetMapping("/teacher/{teacherName}")
+    public ResponseEntity<List<Test>> getTestsByTeacher(@PathVariable String teacherName) {
+        List<Test> tests = testRepository.findByTeacherName(teacherName);
+        return ResponseEntity.ok(tests);
+    }
+
 
     @GetMapping
     public ResponseEntity<List<Test>> getAllTests() {
         List<Test> tests = testRepository.findAll();
         return ResponseEntity.ok(tests);
     }
+
+
 
     @GetMapping("/{id}")
     public ResponseEntity<Test> getTestById(@PathVariable String id) {
