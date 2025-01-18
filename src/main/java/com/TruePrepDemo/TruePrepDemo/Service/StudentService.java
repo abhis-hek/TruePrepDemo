@@ -5,10 +5,8 @@ import com.TruePrepDemo.TruePrepDemo.Repo.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @Service
 public class StudentService {
@@ -49,6 +47,9 @@ public class StudentService {
 
     public void deleteStudent(String id) {
         studentRepository.deleteById(id);
+    }
+    public Optional<Student> getStudentByEmail(String email) {
+        return studentRepository.findByEmail(email);
     }
 
     // Login functionality

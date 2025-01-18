@@ -1,6 +1,7 @@
 package com.TruePrepDemo.TruePrepDemo.Controller;
 
 import com.TruePrepDemo.TruePrepDemo.Model.Student;
+import com.TruePrepDemo.TruePrepDemo.Security.JwtUtil;
 import com.TruePrepDemo.TruePrepDemo.Service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -8,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -17,7 +19,8 @@ public class StudentController {
 
     @Autowired
     private StudentService studentService;
-
+    @Autowired
+    private JwtUtil jwtUtils;
     // Signup functionality remains the same
     // Signup functionality with email existence check
     @PostMapping("/signup")
@@ -36,14 +39,29 @@ public class StudentController {
 
     // Login functionality for students
     @PostMapping("/login")
-    public ResponseEntity<Student> login(@RequestBody Student loginRequest) {
+    public ResponseEntity<?> login(@RequestBody Student loginRequest) {
         Optional<Student> studentOptional = studentService.login(loginRequest.getEmail(), loginRequest.getPassword());
 
         if (studentOptional.isPresent()) {
-            return ResponseEntity.ok(studentOptional.get()); // Successful login
+            Student student = studentOptional.get();
+
+            // Generate JWT Token (Assuming JwtUtils is a utility class for token generation)
+            String token = jwtUtils.generateToken(student.getEmail());
+
+            // Return the token and student's first name along with other details
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .body(Map.of(
+                            "token", token,
+                            "firstName", student.getFirstName(),  // Add first name to the response
+                            "studentId", student.getId()  // If needed, you can add other properties
+                    ));
         }
-        return ResponseEntity.status(401).body(null); // Unauthorized if credentials are invalid
+        return ResponseEntity.status(401).body("Invalid email or password");
     }
+
+
+
 
     // Fetch student by email
     @GetMapping("/email/{email}")
